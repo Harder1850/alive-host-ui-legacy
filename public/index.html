@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ALIVE</title>
+  <link rel="stylesheet" href="/src/styles/main.css">
+</head>
+<body>
+  <div class="host-layout">
+    <div class="status-indicator" id="status-indicator"></div>
+    <div id="output-container"></div>
+    <div id="input-container"></div>
+  </div>
+
+  <script type="module">
+    import { host } from '/src/host/coordinator.js';
+    import { systemClient } from '/src/services/system-client.js';
+
+    // Initialize when DOM ready
+    document.addEventListener('DOMContentLoaded', () => {
+      host.init();
+    });
+
+    // Update status indicator
+    systemClient.on('status', (data) => {
+      const indicator = document.getElementById('status-indicator');
+      if (indicator) {
+        indicator.classList.toggle('connected', data.connected);
+        indicator.title = data.connected ? 'System connected' : 'Waiting for system';
+      }
+    });
+  </script>
+</body>
+</html>
