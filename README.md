@@ -1,68 +1,79 @@
-ALIVE Host UI
+# ALIVE Host UI
 
-The ALIVE Host UI is a human-facing interface layer for the ALIVE system.
+Human-facing interface for the ALIVE system.
 
-It provides:
+**Pure transport. No intelligence. No authority.**
 
-input surfaces (text, voice, controls)
+## Quick Start
 
-visual output (logs, telemetry, summaries)
+```bash
+npm install
+npm start
+```
 
-observability into system state
+Open http://localhost:3000
 
-It does not:
+## Architecture
 
-think
-
-decide
-
-execute
-
-store memory
-
-enforce policy
-
-The Host UI is replaceable, optional, and low-authority by design.
-
-Architectural Role
+```
 Human
   ⇅
-Host UI (alive-host-ui)
+Host UI (this repo)
   ⇅
 alive-system
   ⇅
-alive-body
-  ⇅
-alive-core
+alive-body → alive-core
+```
 
+Host UI talks **only** to alive-system. Never directly to body or core.
 
-The Host UI communicates only through approved system interfaces and never directly with core or body internals.
+## Structure
 
-Binding Contracts (Must Read)
+```
+├── server.js                 # WebSocket bridge (pure passthrough)
+├── public/index.html         # Entry point
+└── src/
+    ├── host/coordinator.js   # Wires panels + services
+    ├── panels/
+    │   ├── input-panel.js    # Text, voice, file, URL input
+    │   └── output-panel.js   # Renders system streams
+    ├── services/
+    │   └── system-client.js  # WebSocket client to alive-system
+    ├── stores/
+    │   └── ui-state.js       # Ephemeral UI state only
+    └── styles/main.css
+```
 
-All development in this repository is governed by the following documents:
+## Connecting alive-system
 
-HOST_UI_BOUNDARIES.md
-Defines what the Host UI is and is not allowed to do.
+System connects as WebSocket client:
 
-HOST_UI_INVARIANTS.md
-Lists non-negotiable invariants. Violations are architectural errors.
+```javascript
+const ws = new WebSocket('ws://localhost:3000/ws?type=system');
 
-HOST_UI_ARCHITECTURE.md
-Describes the intended structure and data flow of the Host UI.
+// Receive requests from UI
+ws.on('message', (data) => {
+  const { type, intent, context } = JSON.parse(data);
+  // System decides what to do
+});
 
-HOST_UI_REPO_RULES.md
-Defines filesystem, dependency, and repository isolation rules.
+// Send render instructions to UI
+ws.send(JSON.stringify({
+  type: 'stream',
+  html: '<p>System decided to show this.</p>'
+}));
+```
 
-These documents are authoritative.
+## Invariants
 
-Key Principle
+| Rule | Constraint |
+|------|------------|
+| UI-01 | No cognition |
+| UI-02 | No authority |
+| UI-03 | No execution |
+| UI-04 | No memory ownership |
+| UI-05 | Read-only observability |
+| UI-06 | Replaceability |
+| UI-07 | No boundary bypass |
 
-The Host UI is a window, not a brain — and never a hand on the controls.
-
-If removing this repository breaks ALIVE, something is wrong.
-
-Status
-
-This repository may evolve rapidly in appearance and tooling,
-but its authority and boundaries are frozen.
+**If removing this repository breaks ALIVE, something is wrong.**
