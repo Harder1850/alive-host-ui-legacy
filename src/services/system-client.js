@@ -78,14 +78,8 @@ class SystemClient {
   }
 
   _handleMessage(message) {
-    const { type } = message;
-    
-    // System sends 'render' instructions
-    if (type === 'render') {
-      this._emit('render', message);
-    } else {
-      console.warn('[SystemClient] Unknown message type:', type);
-    }
+    // Forward everything as render. Host UI is not allowed to branch on content.
+    this._emit('render', message);
   }
 
   _emit(type, data) {
