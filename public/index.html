@@ -4,32 +4,192 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ALIVE</title>
-  <link rel="stylesheet" href="/src/styles/main.css">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    :root {
+      --bg: #0a0a0b;
+      --bg-secondary: #111113;
+      --text: #e8e8e8;
+      --text-muted: #888;
+      --accent: #409cff;
+      --accent-green: #40ff9c;
+      --border: #222;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    header {
+      padding: 0.5rem 1rem;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      color: var(--accent);
+    }
+
+    #status-indicator {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #ff4040;
+      transition: background 0.3s;
+    }
+
+    #status-indicator.connected {
+      background: var(--accent-green);
+    }
+
+    /* Output Panel */
+    #output-panel {
+      flex: 1;
+      overflow-y: auto;
+      padding: 1rem;
+    }
+
+    .message {
+      margin-bottom: 0.75rem;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      max-width: 80%;
+      word-wrap: break-word;
+    }
+
+    .message.user {
+      background: var(--accent);
+      color: white;
+      margin-left: auto;
+    }
+
+    .message.system {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border);
+    }
+
+    .message.status {
+      background: transparent;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      text-align: center;
+      max-width: 100%;
+    }
+
+    .message.error {
+      background: rgba(255, 64, 64, 0.15);
+      color: #ff6b6b;
+    }
+
+    /* Input Panel */
+    #input-panel {
+      padding: 1rem;
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 0.75rem;
+      align-items: center;
+    }
+
+    #file-button,
+    #mic-button {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      border: 1px dashed var(--border);
+      background: transparent;
+      color: var(--text-muted);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+    }
+
+    #mic-button {
+      border-style: solid;
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    #mic-button:hover {
+      background: rgba(64, 156, 255, 0.1);
+    }
+
+    #mic-button.listening {
+      background: var(--accent);
+      color: white;
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    #input-field {
+      flex: 1;
+      padding: 0.75rem 1rem;
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      background: var(--bg-secondary);
+      color: var(--text);
+      font-size: 1rem;
+      outline: none;
+    }
+
+    #input-field:focus {
+      border-color: var(--accent);
+    }
+
+    #input-field::placeholder {
+      color: var(--text-muted);
+    }
+  </style>
 </head>
 <body>
-  <div class="host-layout">
-    <div class="status-indicator" id="status-indicator"></div>
-    <div id="output-container"></div>
-    <div id="input-container"></div>
+  <header>
+    <span class="logo">ALIVE</span>
+    <div id="status-indicator" title="Disconnected"></div>
+  </header>
+
+  <div id="output-panel">
+    <!-- Messages appear here -->
   </div>
 
-  <script type="module">
-    import { host } from '/src/host/coordinator.js';
-    import { systemClient } from '/src/services/system-client.js';
+  <div id="input-panel">
+    <button id="file-button" title="Upload file">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="17 8 12 3 7 8"/>
+        <line x1="12" y1="3" x2="12" y2="15"/>
+      </svg>
+    </button>
+    <button id="mic-button" title="Voice input">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+        <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+        <line x1="12" y1="19" x2="12" y2="23"/>
+        <line x1="8" y1="23" x2="16" y2="23"/>
+      </svg>
+    </button>
+    <input type="text" id="input-field" placeholder="Type or speak..." autocomplete="off">
+  </div>
 
-    // Initialize when DOM ready
-    document.addEventListener('DOMContentLoaded', () => {
-      host.init();
-    });
-
-    // Update status indicator
-    systemClient.on('status', (data) => {
-      const indicator = document.getElementById('status-indicator');
-      if (indicator) {
-        indicator.classList.toggle('connected', data.connected);
-        indicator.title = data.connected ? 'System connected' : 'Waiting for system';
-      }
-    });
-  </script>
+  <script type="module" src="/src/app.js"></script>
 </body>
 </html>
