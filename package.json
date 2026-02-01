@@ -1,7 +1,7 @@
 {
   "name": "alive-host-ui",
   "version": "0.1.0",
-  "description": "Launcher and UI server for ALIVE system. Starts alive-system and serves the web interface.",
+  "description": "Launcher and UI server for ALIVE. Starts alive-system and serves the web interface. Pure transport, no intelligence, no authority.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js"
