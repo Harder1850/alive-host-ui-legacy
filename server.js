@@ -1,7 +1,11 @@
 /**
- * ALIVE Host UI - Launcher Server
+ * ALIVE Host UI - Master Launcher
  *
- * Starts alive-system, then serves the UI files.
+ * Starts all ALIVE components:
+ * 1. alive-core (reasoning, memory) ? port 7072
+ * 2. alive-body (execution, sensors) ? port 7071
+ * 3. alive-system (orchestrator) ? port 7070
+ * Then serves the UI on port 3001
  */
 const express = require('express');
 const { spawn } = require('child_process');
@@ -9,31 +13,64 @@ const path = require('path');
 
 const PORT = process.env.PORT || 3001;
 const HOST = process.env.HOST || '0.0.0.0';
+const CORE_PATH = process.env.CORE_PATH || '../alive-core';
+const BODY_PATH = process.env.BODY_PATH || '../alive-body';
 const SYSTEM_PATH = process.env.SYSTEM_PATH || '../alive-system';
 
 const app = express();
-let systemProcess = null;
+const processes = { core: null, body: null, system: null };
 
-// Start alive-system
-function startSystem() {
+function log(component, message) {
+  const timestamp = new Date().toLocaleTimeString();
+  console.log(`[${timestamp}] [${component}] ${message}`);
+}
+
+function error(component, message) {
+  const timestamp = new Date().toLocaleTimeString();
+  console.error(`[${timestamp}] [${component}] ? ${message}`);
+}
+
+function startComponent(name, cwd, command = 'npm start') {
   return new Promise((resolve, reject) => {
-    console.log('[HOST-UI] Starting alive-system...');
+    log('HOST-UI', `Starting ${name}...`);
     
-    systemProcess = spawn('npm', ['start'], {
-      cwd: path.join(__dirname, SYSTEM_PATH),
+    const proc = spawn(command, [], {
+      cwd: path.join(__dirname, cwd),
       stdio: 'inherit',
       shell: true
     });
 
-    systemProcess.on('error', reject);
-    
+    proc.on('error', (err) => {
+      error(name, err.message);
+      reject(err);
+    });
+
+    processes[name] = proc;
+
     setTimeout(() => {
-      if (systemProcess && !systemProcess.killed) {
-        console.log('[HOST-UI] ? System started');
+      if (proc && !proc.killed) {
+        log('HOST-UI', `? ${name} started`);
         resolve();
+      } else {
+        reject(new Error(`${name} failed to start`));
       }
-    }, 3000);
+    }, 2000);
   });
+}
+
+async function startComponents() {
+  try {
+    log('HOST-UI', '?? Starting all components...\n');
+    
+    await startComponent('core', CORE_PATH);
+    await startComponent('body', BODY_PATH);
+    await startComponent('system', SYSTEM_PATH);
+    
+    log('HOST-UI', '? All components started\n');
+  } catch (err) {
+    error('HOST-UI', `Failed to start components: ${err.message}`);
+    process.exit(1);
+  }
 }
 
 app.use(express.static(path.join(__dirname, 'public')));
@@ -44,32 +81,51 @@ app.get('/', (req, res) => {
 });
 
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', systemRunning: systemProcess && !systemProcess.killed });
+  res.json({
+    status: 'ok',
+    components: {
+      core: processes.core && !processes.core.killed,
+      body: processes.body && !processes.body.killed,
+      system: processes.system && !processes.system.killed
+    }
+  });
 });
 
 async function main() {
   try {
-    await startSystem();
+    await startComponents();
+    
     app.listen(PORT, HOST, () => {
       console.log(`
 +-------------------------------------------------------+
-¦                  ALIVE HOST UI                        ¦
+¦              ?? ALIVE SYSTEM RUNNING                  ¦
 ¦-------------------------------------------------------¦
-¦  UI:    http://localhost:${PORT}                          ¦
-¦  System: ws://localhost:7070                          ¦
-¦  Mode:   Launcher + Server                            ¦
+¦  ?? Open: http://localhost:${PORT}                        
+¦  ?? Core     ? localhost:7072                         ¦
+¦  ???  Body     ? localhost:7071                         ¦
+¦  ??  System   ? localhost:7070                         ¦
+¦  Stop: Ctrl+C                                         ¦
 +-------------------------------------------------------+
       `);
     });
   } catch (err) {
-    console.error('Failed to start:', err.message);
+    error('HOST-UI', `Failed to start: ${err.message}`);
     process.exit(1);
   }
 }
 
 process.on('SIGINT', () => {
-  console.log('Shutting down...');
-  if (systemProcess) systemProcess.kill();
+  log('HOST-UI', '?? Shutting down...');
+  
+  Object.entries(processes).forEach(([name, proc]) => {
+    if (proc && !proc.killed) {
+      try {
+        proc.kill();
+        log('HOST-UI', `  Stopped ${name}`);
+      } catch (e) {}
+    }
+  });
+  
   process.exit(0);
 });
 
