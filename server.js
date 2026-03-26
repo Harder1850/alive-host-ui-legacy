@@ -13,9 +13,9 @@ const path = require('path');
 
 const PORT = process.env.PORT || 3001;
 const HOST = process.env.HOST || '0.0.0.0';
-const CORE_PATH = process.env.CORE_PATH || '../alive-core';
-const BODY_PATH = process.env.BODY_PATH || '../alive-body';
-const SYSTEM_PATH = process.env.SYSTEM_PATH || '../alive-system';
+const CORE_PATH = process.env.CORE_PATH || 'C:\\Users\\mikeh\\dev\\ALIVE\\alive-repos\\alive-mind';
+const BODY_PATH = process.env.BODY_PATH || 'C:\\Users\\mikeh\\dev\\ALIVE\\alive-repos\\alive-body';
+const SYSTEM_PATH = process.env.SYSTEM_PATH || 'C:\\Users\\mikeh\\dev\\ALIVE\\alive-repos\\alive-runtime';
 
 const app = express();
 const processes = { core: null, body: null, system: null };
@@ -35,7 +35,7 @@ function startComponent(name, cwd, command = 'npm start') {
     log('HOST-UI', `Starting ${name}...`);
     
     const proc = spawn(command, [], {
-      cwd: path.join(__dirname, cwd),
+      cwd: path.isAbsolute(cwd) ? cwd : path.join(__dirname, cwd),
       stdio: 'inherit',
       shell: true
     });
@@ -98,13 +98,13 @@ async function main() {
     app.listen(PORT, HOST, () => {
       console.log(`
 +-------------------------------------------------------+
-¦              ?? ALIVE SYSTEM RUNNING                  ¦
-¦-------------------------------------------------------¦
-¦  ?? Open: http://localhost:${PORT}                        
-¦  ?? Core     ? localhost:7072                         ¦
-¦  ???  Body     ? localhost:7071                         ¦
-¦  ??  System   ? localhost:7070                         ¦
-¦  Stop: Ctrl+C                                         ¦
+ï¿½              ?? ALIVE SYSTEM RUNNING                  ï¿½
+ï¿½-------------------------------------------------------ï¿½
+ï¿½  ?? Open: http://localhost:${PORT}                        
+ï¿½  ?? Core     ? localhost:7072                         ï¿½
+ï¿½  ???  Body     ? localhost:7071                         ï¿½
+ï¿½  ??  System   ? localhost:7070                         ï¿½
+ï¿½  Stop: Ctrl+C                                         ï¿½
 +-------------------------------------------------------+
       `);
     });
