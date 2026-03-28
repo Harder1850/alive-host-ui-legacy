@@ -29,7 +29,7 @@ Host UI (this repo - launcher + server)
   ? spawns & routes
 alive-system (port 7070)
   ? orchestrates
-alive-body ? alive-core
+alive-body ? alive-mind
 ```
 
 Host UI talks **only** to alive-system. Never directly to body or core.
@@ -41,12 +41,12 @@ Host UI talks **only** to alive-system. Never directly to body or core.
 +-- src/
     +-- host/coordinator.js   # Wires panels + services
     +-- panels/
-    ¦   +-- input-panel.js    # Text, voice, file, URL input
-    ¦   +-- output-panel.js   # Renders system streams
+    ï¿½   +-- input-panel.js    # Text, voice, file, URL input
+    ï¿½   +-- output-panel.js   # Renders system streams
     +-- services/
-    ¦   +-- system-client.js  # WebSocket client to alive-system
+    ï¿½   +-- system-client.js  # WebSocket client to alive-system
     +-- stores/
-    ¦   +-- ui-state.js       # Ephemeral UI state only
+    ï¿½   +-- ui-state.js       # Ephemeral UI state only
     +-- styles/main.css
 ```
 
